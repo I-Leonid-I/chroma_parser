@@ -93,7 +93,8 @@ executable chroma-parser
     -- Other library packages from which modules are imported.
     build-depends:
         base >=4.14 && <5,
-        chroma-parser
+        chroma-parser,
+        megaparsec >= 8.0 && < 10
 
     -- Directories containing source files.
     hs-source-dirs:   app
