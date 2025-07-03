@@ -1,0 +1,66 @@
+# Haskell build artifacts
+dist/
+dist-newstyle/
+.stack-work/
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
+*.chi
+*.chs.h
+*.p_hi
+*.p_o
+*.prof
+*.tix
+*.eventlog
+
+# Cabal sandbox
+.cabal-sandbox/
+cabal.sandbox.config
+
+# Stack
+.stack-work/
+stack.yaml.lock
+
+# GHC
+.ghc.environment.*
+
+# Haskell Language Server
+.hie/
+hie.yaml
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Documentation build
+docs/_build/
+
+# Profiling
+*.prof
+*.hp
+*.aux
+*.ps
+
+# Test coverage
+.hpc/
