@@ -6,6 +6,7 @@ module Parser where
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Data.Void
+import Control.Monad (void)
 
 type Parser = Parsec Void String
 
@@ -60,12 +61,13 @@ parseCommand = do
 
 parseFileName :: Parser String
 parseFileName = do
-    fname <- someTill anySingle (try (space1 *> string "metadata:") <|> eof)
+    fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> eof)
     return fname
 
 parseFileId :: Parser String
 parseFileId = do
     _ <- string "id="
+    -- Do not parsing _ FIX NEEDED
     fileId <- some alphaNumChar
     return fileId
 
@@ -73,7 +75,7 @@ parseMetadata :: Parser Metadata
 parseMetadata = do
     key <- some alphaNumChar
     _ <- char '='
-    value <- manyTill anySingle (char ';' <|> lookAhead eof)
+    value <- manyTill anySingle (void (char ';') <|> lookAhead eof)
     return (key, value)
 
 parseCount :: Parser Int
