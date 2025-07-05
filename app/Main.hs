@@ -6,14 +6,13 @@ import Data.Void
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
   let input = "SEARCH"
   let res :: Either (ParseErrorBundle String Void) String
       -- runParser - to run the parser
       -- parser function name
       -- source name (file name)
       -- input string to parse
-      res = runParser Parser.parseCommand "" input
+      res = runParser Parser.parseQuery "" input
   case res of
     Left err -> putStrLn $ "Parse error: " ++ show err
     Right value -> putStrLn $ "Parsed: " ++ value
