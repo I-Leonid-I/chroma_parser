@@ -1,6 +1,6 @@
 module Main where
 
-import qualified MyLib
+import qualified Parser
 import Text.Megaparsec
 import Data.Void
 
@@ -13,7 +13,7 @@ main = do
       -- parser function name
       -- source name (file name)
       -- input string to parse
-      res = runParser MyLib.parserString "" input
+      res = runParser Parser.parseCommand "" input
   case res of
     Left err -> putStrLn $ "Parse error: " ++ show err
     Right value -> putStrLn $ "Parsed: " ++ value
