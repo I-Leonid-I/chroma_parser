@@ -7,7 +7,7 @@ import Data.Void
 main :: IO ()
 main = do
   putStrLn "Hello, Haskell!"
-  let input = "Hello World"
+  let input = "SEARCH"
   let res :: Either (ParseErrorBundle String Void) String
       -- runParser - to run the parser
       -- parser function name

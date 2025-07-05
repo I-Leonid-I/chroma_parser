@@ -10,7 +10,7 @@ parseCommand :: Parser String
 parseCommand = do
     cmd <- choice
         [ string "ADD"
-        , string "REMOVE"
+        , string "DELETE"
         , string "UPDATE"
         , string "GET"
         , string "SEARCH"
