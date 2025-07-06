@@ -41,7 +41,7 @@ parseQuery = do
             return (GetResult fileId)
         SEARCH -> do
             -- NEED TO FIX:
-            -- Does not work properly because metadata wants the end of the input
+            -- Does not work properly because metadata wants the end of the input.
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
             _ <- optional space1
