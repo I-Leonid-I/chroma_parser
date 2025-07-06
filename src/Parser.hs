@@ -88,6 +88,3 @@ parseCount = do
     countNum <- some digitChar
     return (read countNum)
 
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
