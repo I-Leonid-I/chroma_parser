@@ -40,8 +40,11 @@ parseQuery = do
             fileId <- parseFileId
             return (GetResult fileId)
         SEARCH -> do
+            -- NEED TO FIX
+            -- Dows not work properly because metadata wants the end of the input
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
+            _ <- optional space1
             countFiles <- parseCount
             return (SearchResult fileName countFiles metadata)
 
