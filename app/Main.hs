@@ -6,7 +6,7 @@ import Data.Void
 
 main :: IO ()
 main = do
-  let input = "DELETE id=doc_767"
+  let input = "DELETE id=doc_"
   let res :: Either (ParseErrorBundle String Void) Parser.Result
       -- runParser - to run the parser
       -- parser function name

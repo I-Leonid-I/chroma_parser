@@ -67,9 +67,10 @@ parseFileName = do
 parseFileId :: Parser String
 parseFileId = do
     _ <- string "id="
-    -- Do not parsing _ FIX NEEDED
-    fileId <- some alphaNumChar
-    return fileId
+    prefix <- some alphaNumChar
+    _ <- char '_'
+    fileId <- some digitChar
+    return (prefix ++ "_" ++ fileId)
 
 parseMetadata :: Parser Metadata
 parseMetadata = do
