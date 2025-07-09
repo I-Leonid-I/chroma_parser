@@ -33,6 +33,7 @@ parseQuery = do
             return (DeleteResult fileId)
         UPDATE -> do
             fileId <- parseFileId
+            _ <- optional space1
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
             return (UpdateResult fileId fileName metadata)
@@ -64,6 +65,7 @@ parseCommand = do
 
 parseFileName :: Parser String
 parseFileName = do
+    _ <- optional space1
     fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> void (char ';'))
     return fname
 
