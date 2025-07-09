@@ -40,10 +40,10 @@ parseQuery = do
             fileId <- parseFileId
             return (GetResult fileId)
         SEARCH -> do
-            -- NEED TO FIX:
-            -- Does not work properly because metadata wants the end of the input.
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
+            _ <- optional space1
+            _ <- string "->"
             _ <- optional space1
             countFiles <- parseCount
             return (SearchResult fileName countFiles metadata)
@@ -64,7 +64,7 @@ parseCommand = do
 
 parseFileName :: Parser String
 parseFileName = do
-    fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> eof)
+    fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> void (char ';'))
     return fname
 
 parseFileId :: Parser String
@@ -79,12 +79,11 @@ parseMetadata :: Parser Metadata
 parseMetadata = do
     key <- some alphaNumChar
     _ <- char '='
-    value <- manyTill anySingle (void (char ';') <|> lookAhead eof)
+    value <- manyTill anySingle (try (void (char ',')) <|> void (char ';'))
     return (key, value)
 
 parseCount :: Parser Int
 parseCount = do
-    _ <- string "count="
     countNum <- some digitChar
     return (read countNum)
 

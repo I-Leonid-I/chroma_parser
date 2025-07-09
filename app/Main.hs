@@ -6,7 +6,7 @@ import Data.Void
 
 main :: IO ()
 main = do
-  let input = "ADD name of the file metadata:a=b"
+  let input = "SEARCH file metadata:a=b,c=d; -> 10"
   let res :: Either (ParseErrorBundle String Void) Parser.Result
       -- runParser - to run the parser
       -- parser function name
