@@ -6,7 +6,7 @@ import Data.Void
 
 main :: IO ()
 main = do
-  let input = "UPDATE id=doc_123 name of the file metadata:author=John,v=5;"
+  let input = "SEARCH -> 10 name metadata:a=b,c=d;"
   let res :: Either (ParseErrorBundle String Void) Parser.Result
       -- runParser - to run the parser
       -- parser function name
