@@ -10,7 +10,7 @@ import Control.Monad (void)
 
 type Parser = Parsec Void String
 
-data Command = ADD | DELETE | UPDATE | GET | SEARCH
+data Command = ADD | DELETE | UPDATE | GET | SEARCH | DROP
     deriving (Show, Eq)
 type Metadata = (String, String)
 data Result = AddResult String [Metadata]
@@ -18,6 +18,7 @@ data Result = AddResult String [Metadata]
             | UpdateResult String String [Metadata]
             | GetResult String
             | SearchResult String Int [Metadata]
+            | DropResult Bool
     deriving (Show, Eq)
 
 parseQuery :: Parser Result
@@ -40,13 +41,16 @@ parseQuery = do
             fileId <- parseFileId
             return (GetResult fileId)
         SEARCH -> do
-            -- NEED TO FIX:
-            -- Does not work properly because metadata wants the end of the input.
+            countFiles <- parseCount
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
-            _ <- optional space1
-            countFiles <- parseCount
             return (SearchResult fileName countFiles metadata)
+        DROP -> do
+            _ <- optional space1
+            agree <- anySingle
+            if agree == 'Y' || agree == 'y'
+                then return (DropResult True)
+                else return (DropResult False)
 
  
 
@@ -58,18 +62,22 @@ parseCommand = do
         , UPDATE <$ string "UPDATE"
         , GET <$ string "GET"
         , SEARCH <$ string "SEARCH"
+        , DROP <$ string "DROP"
         ]
     space
     return cmd
 
 parseFileName :: Parser String
 parseFileName = do
-    fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> eof)
+    _ <- optional space1
+    fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> void (char ';'))
     return fname
 
 parseFileId :: Parser String
 parseFileId = do
-    _ <- string "id="
+    _ <- optional space1
+    _ <- string "->"
+    _ <- optional space1
     prefix <- some alphaNumChar
     _ <- char '_'
     fileId <- some digitChar
@@ -79,12 +87,14 @@ parseMetadata :: Parser Metadata
 parseMetadata = do
     key <- some alphaNumChar
     _ <- char '='
-    value <- manyTill anySingle (void (char ';') <|> lookAhead eof)
+    value <- manyTill anySingle (try (void (char ',')) <|> void (char ';'))
     return (key, value)
 
 parseCount :: Parser Int
 parseCount = do
-    _ <- string "count="
+    _ <- optional space1
+    _ <- string "->"
+    _ <- optional space1
     countNum <- some digitChar
     return (read countNum)
 
