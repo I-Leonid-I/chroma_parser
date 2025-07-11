@@ -10,7 +10,7 @@ import Control.Monad (void)
 
 type Parser = Parsec Void String
 
-data Command = ADD | DELETE | UPDATE | GET | SEARCH 
+data Command = ADD | DELETE | UPDATE | GET | SEARCH | DROP
     deriving (Show, Eq)
 type Metadata = (String, String)
 data Result = AddResult String [Metadata]
@@ -18,6 +18,7 @@ data Result = AddResult String [Metadata]
             | UpdateResult String String [Metadata]
             | GetResult String
             | SearchResult String Int [Metadata]
+            | DropResult Bool
     deriving (Show, Eq)
 
 parseQuery :: Parser Result
@@ -44,6 +45,12 @@ parseQuery = do
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
             return (SearchResult fileName countFiles metadata)
+        DROP -> do
+            _ <- optional space1
+            agree <- anySingle
+            if agree == 'Y' || agree == 'y'
+                then return (DropResult True)
+                else return (DropResult False)
 
  
 
@@ -55,6 +62,7 @@ parseCommand = do
         , UPDATE <$ string "UPDATE"
         , GET <$ string "GET"
         , SEARCH <$ string "SEARCH"
+        , DROP <$ string "DROP"
         ]
     space
     return cmd
