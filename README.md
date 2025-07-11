@@ -12,4 +12,4 @@ You can work with files inside the collection with all possible Chroma instrumen
 - Search for the nearest files with respect to their content;
 - Delete the file;
 - Drop the whole collection;
-You should use a semicolon `;` in the end of every command
+You should use a semicolon `;` at the end of every command
