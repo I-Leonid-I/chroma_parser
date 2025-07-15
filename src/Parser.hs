@@ -36,6 +36,13 @@ symbol = L.symbol spaceConsumer
 spaceReq :: Parser a -> Parser a
 spaceReq p = space1 *> p
 
+lexemeLeaveOneSpace :: Parser a -> Parser a
+lexemeLeaveOneSpace p = do
+    x <- p
+    _ <- manyTill spaceChar (lookAhead spaceChar)
+    return x
+
+
 parseAllQueries :: Parser [Result]
 parseAllQueries = some (try (parseQuery <* space)) <* eof
 
@@ -72,6 +79,7 @@ parseDelete :: Parser Result
 parseDelete = do
     _ <- symbol "DELETE"
     fileId <- parseFileId
+    _ <- char ';'
     return (DeleteResult fileId)
 
 parseUpdate :: Parser Result
@@ -100,7 +108,9 @@ parseSearch = do
 parseDrop :: Parser Result
 parseDrop = do
     _ <- symbol "DROP"
+    _ <- symbol ";"
     return DropResult
+
 
 parseFileName :: Parser String
 parseFileName = fmap (dropWhileEnd isSpace) $
@@ -124,5 +134,5 @@ parseMetadata = do
 parseCount :: Parser Int
 parseCount = do
     _ <- symbol "->"
-    countNum <- lexeme $ some digitChar
+    countNum <- lexemeLeaveOneSpace $ some digitChar
     return (read countNum)
