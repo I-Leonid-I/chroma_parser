@@ -26,3 +26,4 @@ main = mapM_ runTest testInputs
     runTest input = do
       putStrLn $ "\nInput: " ++ show input
       print $ Parser.runParseAllQueries input
+
