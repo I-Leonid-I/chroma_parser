@@ -162,7 +162,9 @@ escapeJson = concatMap esc
     esc '\t' = "\\t"
     esc c    = [c]
 
-
+parseMultipleToJson :: [Result] -> String
+parseMultipleToJson results =
+    "{" ++ concat (intersperse "," (map resultToJson results)) ++ "}"
 
 -- Сериализация результата парсинга в JSON-строку
 resultToJson :: Result -> String

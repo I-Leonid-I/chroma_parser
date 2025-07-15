@@ -25,5 +25,5 @@ main = mapM_ runTest testInputs
   where
     runTest input = do
       putStrLn $ "\nInput: " ++ show input
-      print $ Parser.runParseAllQueries input
+      putStrLn $ Parser.parseMultipleToJson (Parser.runParseAllQueries input)
 
