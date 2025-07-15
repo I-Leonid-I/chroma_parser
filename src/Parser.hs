@@ -21,7 +21,7 @@ data Result = AddResult String [Metadata]
             | UpdateResult String String [Metadata]
             | GetResult String
             | SearchResult String Int [Metadata]
-            | DropResult Bool
+            | DropResult
     deriving (Show, Eq)
 
 spaceConsumer :: Parser ()
@@ -77,27 +77,23 @@ parseQuery = do
             metadata <- many (try parseMetadata)
             return (SearchResult fileName countFiles metadata)
         DROP -> do
-            _ <- optional space1
-            agree <- anySingle
-            if agree == 'Y' || agree == 'y'
-                then return (DropResult True)
-                else return (DropResult False)
+            return DropResult
 
- 
 
 parseCommand :: Parser Command
 parseCommand = choice
-        [ ADD <$ symbol "ADD"
-        , DELETE <$ symbol "DELETE"
-        , UPDATE <$ symbol "UPDATE"
-        , GET <$ symbol "GET"
-        , SEARCH <$ symbol "SEARCH"
-        , DROP <$ symbol "DROP"
-        ]
+    [ ADD <$ symbol "ADD"
+    , DELETE <$ symbol "DELETE"
+    , UPDATE <$ symbol "UPDATE"
+    , GET <$ symbol "GET"
+    , SEARCH <$ symbol "SEARCH"
+    , DROP <$ symbol "DROP"
+    ]
 
 
 parseFileName :: Parser String
-parseFileName = lexeme $ someTill anySingle (string "metadata:" <|> string ";")
+parseFileName = fmap (dropWhileEnd isSpace) $
+    lexeme $ someTill anySingle (try (symbol "metadata:") <|> symbol ";")
 
 parseFileId :: Parser String
 parseFileId = do
