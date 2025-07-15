@@ -5,8 +5,11 @@ module Parser where
 
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void
 import Control.Monad (void)
+import Data.List (dropWhileEnd)
+import Data.Char (isSpace)
 
 type Parser = Parsec Void String
 
@@ -21,8 +24,20 @@ data Result = AddResult String [Metadata]
             | DropResult Bool
     deriving (Show, Eq)
 
+spaceConsumer :: Parser ()
+spaceConsumer = L.space space1 empty empty
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme spaceConsumer
+
+symbol :: String -> Parser String
+symbol = L.symbol spaceConsumer
+
+spaceReq :: String -> Parser String
+spaceReq s = string s <* space1
+
 parseAllQueries :: Parser [Result]
-parseAllQueries = some (try (parseQuery <* optional (char ';') <* space)) <* eof
+parseAllQueries = some (try (parseQuery <* space)) <* eof
 
 runParseAllQueries :: String -> [Result]
 runParseAllQueries input =
@@ -54,6 +69,7 @@ parseQuery = do
             return (UpdateResult fileId fileName metadata)
         GET -> do
             fileId <- parseFileId
+            _ <- char ';'
             return (GetResult fileId)
         SEARCH -> do
             countFiles <- parseCount
@@ -70,46 +86,37 @@ parseQuery = do
  
 
 parseCommand :: Parser Command
-parseCommand = do
-    cmd <- choice
-        [ ADD <$ string "ADD"
-        , DELETE <$ string "DELETE"
-        , UPDATE <$ string "UPDATE"
-        , GET <$ string "GET"
-        , SEARCH <$ string "SEARCH"
-        , DROP <$ string "DROP"
+parseCommand = choice
+        [ ADD <$ symbol "ADD"
+        , DELETE <$ symbol "DELETE"
+        , UPDATE <$ symbol "UPDATE"
+        , GET <$ symbol "GET"
+        , SEARCH <$ symbol "SEARCH"
+        , DROP <$ symbol "DROP"
         ]
-    space
-    return cmd
+
 
 parseFileName :: Parser String
-parseFileName = do
-    _ <- optional space1
-    fileName <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> void (char ';'))
-    return fileName
+parseFileName = lexeme $ someTill anySingle (string "metadata:" <|> string ";")
 
 parseFileId :: Parser String
 parseFileId = do
-    _ <- optional space1
-    _ <- string "->"
-    _ <- optional space1
-    prefix <- some alphaNumChar
+    _ <- symbol "->"
+    prefix <- lexeme $ some alphaNumChar
     _ <- char '_'
     fileId <- some digitChar
     return (prefix ++ "_" ++ fileId)
 
 parseMetadata :: Parser Metadata
 parseMetadata = do
-    key <- some alphaNumChar
-    _ <- char '='
-    value <- manyTill anySingle (try (void (char ',')) <|> void (char ';'))
+    key <- lexeme $ some alphaNumChar
+    _ <- symbol "="
+    value <- lexeme $ manyTill anySingle (try (void (char ',')) <|> void (char ';'))
     return (key, value)
 
 parseCount :: Parser Int
 parseCount = do
-    _ <- optional space1
-    _ <- string "->"
-    _ <- optional space1
-    countNum <- some digitChar
+    _ <- symbol "->"
+    countNum <- lexeme $ some digitChar
     return (read countNum)
 
