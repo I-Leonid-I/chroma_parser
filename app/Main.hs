@@ -9,7 +9,7 @@ import Data.Void
 testInputs :: [String]
 testInputs =
   [ "ADD file1 metadata: key1=val1, key2=val2;"
-  , "ADD file2;"
+  , "ADD file2"
   , "DELETE ->doc_123;"
   , "UPDATE ->doc_123 file2 metadata: key=val;"
   , "GET ->doc_123;"
@@ -25,5 +25,5 @@ main = mapM_ runTest testInputs
   where
     runTest input = do
       putStrLn $ "\nInput: " ++ show input
-      putStrLn $ Parser.parseMultipleToJson (Parser.runParseAllQueries input)
+      putStrLn $ Parser.runParseAllQueriesAsJson input
 

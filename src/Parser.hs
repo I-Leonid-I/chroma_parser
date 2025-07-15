@@ -8,7 +8,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void
 import Data.Char (isSpace)
 import Control.Monad (void, when)
-import Data.List (dropWhileEnd)
+import Data.List (dropWhileEnd, find, isPrefixOf)
 
 
 type Parser = Parsec Void String
@@ -53,9 +53,50 @@ runParseAllQueries input =
         Left err -> handleError err
         Right results -> results
 
+-- Alternative function that returns error information instead of throwing
+runParseAllQueriesWithError :: String -> Either (String, String) [Result]
+runParseAllQueriesWithError input =
+    case runParser parseAllQueries "" input of
+        Left err -> Left (parseErrorParts err)
+        Right results -> Right results
+
+-- Function that returns JSON string for both success and error cases
+runParseAllQueriesAsJson :: String -> String
+runParseAllQueriesAsJson input =
+    case runParser parseAllQueries "" input of
+        Left err -> errorToJson err
+        Right results -> parseMultipleToJson results
+
 
 handleError :: ParseErrorBundle String Void -> [Result]
 handleError err = error (errorBundlePretty err)
+
+-- Extract unexpected and expecting parts from error message
+parseErrorParts :: ParseErrorBundle String Void -> (String, String)
+parseErrorParts err = 
+    let errorMsg = errorBundlePretty err
+        errorLines = lines errorMsg
+        unexpectedPart = extractUnexpected errorLines
+        expectingPart = extractExpecting errorLines
+    in (unexpectedPart, expectingPart)
+
+extractUnexpected :: [String] -> String
+extractUnexpected errorLines = 
+    case find ("unexpected " `isPrefixOf`) errorLines of
+        Just line -> line
+        Nothing -> "unknown"
+
+extractExpecting :: [String] -> String
+extractExpecting errorLines = 
+    case find ("expecting " `isPrefixOf`) errorLines of
+        Just line -> line
+        Nothing -> "unknown"
+
+-- Convert error to JSON format
+errorToJson :: ParseErrorBundle String Void -> String
+errorToJson err = 
+    let (unexpected, expecting) = parseErrorParts err
+    in "{\"error\":\"" ++ escapeJson unexpected ++ " -> " ++ escapeJson expecting ++ "\"}"
 
 
 parseQuery :: Parser Result
