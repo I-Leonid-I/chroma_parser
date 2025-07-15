@@ -6,13 +6,6 @@ import Data.Void
 
 main :: IO ()
 main = do
-  let input = "DROP g"
-  let res :: Either (ParseErrorBundle String Void) Parser.Result
-      -- runParser - to run the parser
-      -- parser function name
-      -- source name (file name)
-      -- input string to parse
-      res = runParser Parser.parseQuery "" input
-  case res of
-    Left err -> putStrLn $ "Parse error: " ++ show err
-    Right value -> putStrLn $ "Parsed: " ++ show value
+  let input = "ADD file1 metadata:hahah=4; DELETE ->id_1;DROP Y"
+  let results = Parser.runParseAllQueries input
+  mapM_ print results

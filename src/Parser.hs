@@ -21,6 +21,21 @@ data Result = AddResult String [Metadata]
             | DropResult Bool
     deriving (Show, Eq)
 
+parseAllQueries :: Parser [Result]
+parseAllQueries = some (try (parseQuery <* optional (char ';') <* space)) <* eof
+
+runParseAllQueries :: String -> [Result]
+runParseAllQueries input =
+    case runParser parseAllQueries "" input of
+        Left err -> handleError err
+        Right results -> results
+
+
+handleError :: ParseErrorBundle String Void -> [Result]
+handleError err = 
+    error ("Hi, here is a mistake(((( Custom parse error: " ++ errorBundlePretty err)
+
+
 parseQuery :: Parser Result
 parseQuery = do
     cmd <- parseCommand
@@ -70,8 +85,8 @@ parseCommand = do
 parseFileName :: Parser String
 parseFileName = do
     _ <- optional space1
-    fname <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> void (char ';'))
-    return fname
+    fileName <- someTill anySingle (try (space1 *> void (string "metadata:")) <|> void (char ';'))
+    return fileName
 
 parseFileId :: Parser String
 parseFileId = do
