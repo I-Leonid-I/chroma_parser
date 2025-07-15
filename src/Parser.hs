@@ -116,7 +116,7 @@ parseDrop = do
 
 parseFileName :: Parser String
 parseFileName = lexeme $ do
-    fileName <- manyTill anySingle (try (lookAhead (void (string "metadata:"))) <|> try (lookAhead (void (char ';'))))
+    fileName <- manyTill anySingle (try (lookAhead (void (space1 *> string "metadata:"))) <|> try (lookAhead (void (char ';'))))
     return (dropWhileEnd isSpace fileName)
 
 parseFileId :: Parser String
