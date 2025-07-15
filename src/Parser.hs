@@ -104,7 +104,8 @@ parseDrop = do
 
 parseFileName :: Parser String
 parseFileName = fmap (dropWhileEnd isSpace) $
-    lexeme $ someTill anySingle (try (symbol "metadata:") <|> symbol ";")
+    lexeme (someTill anySingle (try (symbol "metadata:") <|> symbol ";")
+      <?> "'metadata:' or ';' after file name")
 
 parseFileId :: Parser String
 parseFileId = do
