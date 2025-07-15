@@ -6,6 +6,6 @@ import Data.Void
 
 main :: IO ()
 main = do
-  let input = "ADDfgkvj;"
+  let input = "ADD fgkvjmetadata: 8=76;"
   let results = Parser.runParseAllQueries input
   mapM_ print results

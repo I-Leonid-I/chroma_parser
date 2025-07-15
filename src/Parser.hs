@@ -33,8 +33,8 @@ lexeme = L.lexeme spaceConsumer
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
 
-spaceReq :: String -> Parser String
-spaceReq s = string s <* space1
+spaceReq :: Parser a -> Parser a
+spaceReq p = space1 *> p
 
 parseAllQueries :: Parser [Result]
 parseAllQueries = some (try (parseQuery <* space)) <* eof
@@ -52,44 +52,55 @@ handleError err =
 
 
 parseQuery :: Parser Result
-parseQuery = do
-    cmd <- parseCommand
-    case cmd of
-        ADD -> do
-            fileName <- parseFileName
-            metadata <- many (try parseMetadata)
-            return (AddResult fileName metadata)
-        DELETE -> do
-            fileId <- parseFileId
-            return (DeleteResult fileId)
-        UPDATE -> do
-            fileId <- parseFileId
-            fileName <- parseFileName
-            metadata <- many (try parseMetadata)
-            return (UpdateResult fileId fileName metadata)
-        GET -> do
-            fileId <- parseFileId
-            _ <- char ';'
-            return (GetResult fileId)
-        SEARCH -> do
-            countFiles <- parseCount
-            fileName <- parseFileName
-            metadata <- many (try parseMetadata)
-            return (SearchResult fileName countFiles metadata)
-        DROP -> do
-            return DropResult
-
-
-parseCommand :: Parser Command
-parseCommand = choice
-    [ ADD <$ symbol "ADD"
-    , DELETE <$ symbol "DELETE"
-    , UPDATE <$ symbol "UPDATE"
-    , GET <$ symbol "GET"
-    , SEARCH <$ symbol "SEARCH"
-    , DROP <$ symbol "DROP"
+parseQuery = choice
+    [ parseAdd
+    , parseDelete
+    , parseUpdate
+    , parseGet
+    , parseSearch
+    , parseDrop
     ]
 
+parseAdd :: Parser Result
+parseAdd = do
+    _ <- string "ADD"
+    fileName <- spaceReq parseFileName
+    metadata <- many (try parseMetadata)
+    return (AddResult fileName metadata)
+
+parseDelete :: Parser Result
+parseDelete = do
+    _ <- symbol "DELETE"
+    fileId <- parseFileId
+    return (DeleteResult fileId)
+
+parseUpdate :: Parser Result
+parseUpdate = do
+    _ <- symbol "UPDATE"
+    fileId <- parseFileId
+    fileName <- spaceReq parseFileName
+    metadata <- many (try parseMetadata)
+    return (UpdateResult fileId fileName metadata)
+
+parseGet :: Parser Result
+parseGet = do
+    _ <- symbol "GET"
+    fileId <- parseFileId
+    _ <- char ';'
+    return (GetResult fileId)
+
+parseSearch :: Parser Result
+parseSearch = do
+    _ <- symbol "SEARCH"
+    countFiles <- parseCount
+    fileName <- spaceReq parseFileName
+    metadata <- many (try parseMetadata)
+    return (SearchResult fileName countFiles metadata)
+
+parseDrop :: Parser Result
+parseDrop = do
+    _ <- symbol "DROP"
+    return DropResult
 
 parseFileName :: Parser String
 parseFileName = fmap (dropWhileEnd isSpace) $
@@ -115,4 +126,3 @@ parseCount = do
     _ <- symbol "->"
     countNum <- lexeme $ some digitChar
     return (read countNum)
-
