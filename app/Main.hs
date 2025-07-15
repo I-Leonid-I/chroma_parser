@@ -6,6 +6,6 @@ import Data.Void
 
 main :: IO ()
 main = do
-  let input = "ADD doc 1234 metadata: a=b;"
+  let input = "AD doc 1234 metadata: a=b;"
   let results = Parser.runParseAllQueries input
   mapM_ print results

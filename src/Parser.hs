@@ -63,20 +63,20 @@ parseQuery = choice
 
 parseAdd :: Parser Result
 parseAdd = do
-    _ <- string "ADD"
+    _ <- string "ADD" <?> "'ADD' command"
     fileName <- spaceReq parseFileName
     metadata <- many (try parseMetadata)
     return (AddResult fileName metadata)
 
 parseDelete :: Parser Result
 parseDelete = do
-    _ <- symbol "DELETE"
+    _ <- symbol "DELETE" <?> "'DELETE' command"
     fileId <- parseFileId
     return (DeleteResult fileId)
 
 parseUpdate :: Parser Result
 parseUpdate = do
-    _ <- symbol "UPDATE"
+    _ <- symbol "UPDATE" <?> "'UPDATE' command"
     fileId <- parseFileId
     fileName <- spaceReq parseFileName
     metadata <- many (try parseMetadata)
@@ -84,14 +84,14 @@ parseUpdate = do
 
 parseGet :: Parser Result
 parseGet = do
-    _ <- symbol "GET"
+    _ <- symbol "GET" <?> "'GET' command"
     fileId <- parseFileId
     _ <- char ';'
     return (GetResult fileId)
 
 parseSearch :: Parser Result
 parseSearch = do
-    _ <- symbol "SEARCH"
+    _ <- symbol "SEARCH" <?> "'SEARCH' command"
     countFiles <- parseCount
     fileName <- spaceReq parseFileName
     metadata <- many (try parseMetadata)
@@ -99,7 +99,7 @@ parseSearch = do
 
 parseDrop :: Parser Result
 parseDrop = do
-    _ <- symbol "DROP"
+    _ <- symbol "DROP" <?> "'DROP' command"
     return DropResult
 
 parseFileName :: Parser String
