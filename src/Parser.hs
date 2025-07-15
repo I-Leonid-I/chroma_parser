@@ -7,10 +7,9 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void
-import Data.Char
+import Data.Char (isSpace)
 import Control.Monad (void, when)
 import Data.List (dropWhileEnd)
-import Data.Char (isSpace)
 
 type Parser = Parsec Void String
 
@@ -38,7 +37,7 @@ spaceReq :: Parser a -> Parser a
 spaceReq p = space1 *> p
 
 parseAllQueries :: Parser [Result]
-parseAllQueries = some (try (parseQuery <* space)) <* eof
+parseAllQueries = many parseQuery <* eof
 
 runParseAllQueries :: String -> [Result]
 runParseAllQueries input =
@@ -66,12 +65,14 @@ parseAdd = do
     _ <- string "ADD" <?> "'ADD' command"
     fileName <- spaceReq parseFileName
     metadata <- many (try parseMetadata)
+    _ <- symbol ";" <?> "';' at the end of ADD command"
     return (AddResult fileName metadata)
 
 parseDelete :: Parser Result
 parseDelete = do
     _ <- symbol "DELETE" <?> "'DELETE' command"
     fileId <- parseFileId
+    _ <- symbol ";" <?> "';' at the end of DELETE command"
     return (DeleteResult fileId)
 
 parseUpdate :: Parser Result
@@ -80,13 +81,14 @@ parseUpdate = do
     fileId <- parseFileId
     fileName <- spaceReq parseFileName
     metadata <- many (try parseMetadata)
+    _ <- symbol ";" <?> "';' at the end of UPDATE command"
     return (UpdateResult fileId fileName metadata)
 
 parseGet :: Parser Result
 parseGet = do
     _ <- symbol "GET" <?> "'GET' command"
     fileId <- parseFileId
-    _ <- char ';'
+    _ <- symbol ";" <?> "';' at the end of GET command"
     return (GetResult fileId)
 
 parseSearch :: Parser Result
@@ -95,17 +97,19 @@ parseSearch = do
     countFiles <- parseCount
     fileName <- spaceReq parseFileName
     metadata <- many (try parseMetadata)
+    _ <- symbol ";" <?> "';' at the end of SEARCH command"
     return (SearchResult fileName countFiles metadata)
 
 parseDrop :: Parser Result
 parseDrop = do
     _ <- symbol "DROP" <?> "'DROP' command"
+    _ <- symbol ";" <?> "';' at the end of DROP command"
     return DropResult
 
 parseFileName :: Parser String
-parseFileName = fmap (dropWhileEnd isSpace) $
-    lexeme (someTill anySingle (try (symbol "metadata:") <|> symbol ";")
-      <?> "'metadata:' or ';' after file name")
+parseFileName = lexeme $ do
+    fileName <- manyTill anySingle (try (lookAhead (void (string "metadata:"))) <|> try (lookAhead (void (char ';'))))
+    return (dropWhileEnd isSpace fileName)
 
 parseFileId :: Parser String
 parseFileId = do
@@ -118,9 +122,10 @@ parseFileId = do
 
 parseMetadata :: Parser Metadata
 parseMetadata = do
-    key <- lexeme $ some alphaNumChar
+    _ <- symbol "metadata:" <?> "'metadata:' keyword"
+    key <- lexeme (some alphaNumChar <?> "metadata key")
     _ <- symbol "=" <?> "'=' after metadata key"
-    value <- lexeme $ manyTill anySingle (try (void (char ',')) <|> void (char ';'))
+    value <- lexeme (manyTill anySingle (try (void (char ',')) <|> try (lookAhead (void (char ';'))))) <?> "metadata value followed by ',' or ';'"
     return (key, value)
 
 parseCount :: Parser Int
