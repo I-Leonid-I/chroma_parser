@@ -1,30 +1,96 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Redundant return" #-}
-{-# HLINT ignore "Use <$>" #-}
+
 module Parser where
+
 
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Data.Void
 import Control.Monad (void)
 
+
 type Parser = Parsec Void String
+
 
 data Command = ADD | DELETE | UPDATE | GET | SEARCH | DROP
     deriving (Show, Eq)
 type Metadata = (String, String)
 data Result = AddResult String [Metadata]
-            | DeleteResult String
-            | UpdateResult String String [Metadata]
-            | GetResult String
-            | SearchResult String Int [Metadata]
-            | DropResult Bool
+           | DeleteResult String
+           | UpdateResult String String [Metadata]
+           | GetResult String
+           | SearchResult String Int [Metadata]
+           | DropResult Bool
     deriving (Show, Eq)
 
-parseQuery :: Parser Result
+
+
+-- Экранирование спецсимволов для корректного вывода JSON
+escapeJson :: String -> String
+escapeJson = concatMap esc
+  where
+    esc '"' = "\\\""
+    esc '\\' = "\\\\"
+    esc '\n' = "\\n"
+    esc '\r' = "\\r"
+    esc '\t' = "\\t"
+    esc c    = [c]
+
+
+
+-- Сериализация результата парсинга в JSON-строку
+resultToJson :: Result -> String
+resultToJson (AddResult fileName metadata) =
+    "{" ++
+    "\"type\":\"ADD\"," ++
+    "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
+    "\"metadata\": " ++ metadataListToJson metadata ++ "}"
+resultToJson (DeleteResult fileId) =
+    "{" ++
+    "\"type\":\"DELETE\"," ++
+    "\"fileId\":\"" ++ escapeJson fileId ++ "\"}"
+resultToJson (UpdateResult fileId fileName metadata) =
+    "{" ++
+    "\"type\":\"UPDATE\"," ++
+    "\"fileId\":\"" ++ escapeJson fileId ++ "\"," ++
+    "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
+    "\"metadata\": " ++ metadataListToJson metadata ++ "}"
+resultToJson (GetResult fileId) =
+    "{" ++
+    "\"type\":\"GET\"," ++
+    "\"fileId\":\"" ++ escapeJson fileId ++ "\"}"
+resultToJson (SearchResult fileName count metadata) =
+    "{" ++
+    "\"type\":\"SEARCH\"," ++
+    "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
+    "\"count\": " ++ show count ++ "," ++
+    "\"metadata\": " ++ metadataListToJson metadata ++ "}"
+resultToJson (DropResult agree) =
+    "{" ++
+    "\"type\":\"DROP\"," ++
+    "\"agree\": " ++ (if agree then "true" else "false") ++ "}"
+    
+-- Сериализация списка метаданных: если пусто — {}, иначе объект с ключами
+metadataListToJson :: [Metadata] -> String
+metadataListToJson [] = "{}"
+metadataListToJson ms = "{" ++ (concat $ intersperse "," (map pairToJson ms)) ++ "}"
+
+
+-- Сериализация одной пары метаданных (ключ:значение)
+pairToJson :: Metadata -> String
+pairToJson (k, v) = "\"" ++ escapeJson k ++ "\":\"" ++ escapeJson v ++ "\""
+
+
+
+-- Вспомогательная функция для вставки разделителя между элементами списка
+intersperse :: a -> [a] -> [a]
+intersperse _ [] = []
+intersperse _ [x] = [x]
+intersperse sep (x:xs) = x : sep : intersperse sep xs
+
+parseQuery :: Parser String
 parseQuery = do
     cmd <- parseCommand
-    case cmd of
+    res <- case cmd of
         ADD -> do
             fileName <- parseFileName
             metadata <- many (try parseMetadata)
@@ -51,8 +117,7 @@ parseQuery = do
             if agree == 'Y' || agree == 'y'
                 then return (DropResult True)
                 else return (DropResult False)
-
- 
+    return (resultToJson res)
 
 parseCommand :: Parser Command
 parseCommand = do
@@ -64,7 +129,7 @@ parseCommand = do
         , SEARCH <$ string "SEARCH"
         , DROP <$ string "DROP"
         ]
-    space
+    space 
     return cmd
 
 parseFileName :: Parser String
