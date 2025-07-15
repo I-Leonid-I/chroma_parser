@@ -71,7 +71,7 @@ parseAdd :: Parser Result
 parseAdd = do
     _ <- string "ADD" <?> "'ADD' command"
     fileName <- spaceReq parseFileName
-    metadata <- many (try parseMetadata)
+    metadata <- option [] (try parseMetadata)
     _ <- symbol ";" <?> "';' at the end of ADD command"
     return (AddResult fileName metadata)
 
@@ -87,7 +87,7 @@ parseUpdate = do
     _ <- symbol "UPDATE" <?> "'UPDATE' command"
     fileId <- parseFileId
     fileName <- spaceReq parseFileName
-    metadata <- many (try parseMetadata)
+    metadata <- option [] (try parseMetadata)
     _ <- symbol ";" <?> "';' at the end of UPDATE command"
     return (UpdateResult fileId fileName metadata)
 
@@ -103,7 +103,7 @@ parseSearch = do
     _ <- symbol "SEARCH" <?> "'SEARCH' command"
     countFiles <- parseCount
     fileName <- spaceReq parseFileName
-    metadata <- many (try parseMetadata)
+    metadata <- option [] (try parseMetadata)
     _ <- symbol ";" <?> "';' at the end of SEARCH command"
     return (SearchResult fileName countFiles metadata)
 
@@ -128,16 +128,23 @@ parseFileId = do
     fileId <- some digitChar
     return (prefix ++ "_" ++ fileId)
 
-parseMetadata :: Parser Metadata
+parseMetadata :: Parser [Metadata]
 parseMetadata = do
     _ <- symbol "metadata:" <?> "'metadata:' keyword"
+    parseMetadataList
+
+parseMetadataList :: Parser [Metadata]
+parseMetadataList = sepBy1 parseKeyValue (symbol ",")
+
+parseKeyValue :: Parser Metadata
+parseKeyValue = do
     key <- lexeme (some alphaNumChar <?> "metadata key")
     _ <- symbol "=" <?> "'=' after metadata key"
-    value <- lexeme (manyTill anySingle (try (void (char ',')) <|> try (lookAhead (void (char ';'))))) <?> "metadata value followed by ',' or ';'"
+    value <- lexeme (manyTill anySingle (try (lookAhead (void (char ','))) <|> try (lookAhead (void (char ';'))))) <?> "metadata value"
     return (key, value)
 
 parseCount :: Parser Int
 parseCount = do
     _ <- symbol "->" <?> "'->' before number of files"
-    countNum <- lexeme $ some digitChar
+    countNum <- lexemeLeaveOneSpace $ some digitChar
     return (read countNum)
