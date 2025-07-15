@@ -191,10 +191,9 @@ resultToJson (SearchResult fileName count metadata) =
     "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
     "\"count\": " ++ show count ++ "," ++
     "\"metadata\": " ++ metadataListToJson metadata ++ "}"
-resultToJson (DropResult agree) =
+resultToJson DropResult =
     "{" ++
-    "\"type\":\"DROP\"," ++
-    "\"agree\": " ++ (if agree then "true" else "false") ++ "}"
+    "\"type\":\"DROP\"" ++ "}"
     
 -- Сериализация списка метаданных: если пусто — {}, иначе объект с ключами
 metadataListToJson :: [Metadata] -> String
