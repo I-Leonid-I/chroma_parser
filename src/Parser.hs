@@ -205,7 +205,7 @@ escapeJson = concatMap esc
 
 parseMultipleToJson :: [Result] -> String
 parseMultipleToJson results =
-    "{" ++ concat (intersperse "," (map resultToJson results)) ++ "}"
+    "[" ++ concat (intersperse "," (map resultToJson results)) ++ "]"
 
 -- Сериализация результата парсинга в JSON-строку
 resultToJson :: Result -> String

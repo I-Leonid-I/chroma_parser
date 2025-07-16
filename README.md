@@ -44,6 +44,5 @@ You should use a semicolon `;` at the end of every command
 2. You **must** use `->` to indicate the following number
 3. You **must** specify the file ID as `doc_sequenceOfNumbers`
 ##### DROP
-`DROP Y;`
-1. You **must** specify the command by typing `DROP`
-2. You **must** type `Y` or `y` as an agreement to delete all your files. For any other characters files will not be deleted
+`DROP;`
+1. You **must** specify the command by typing `DROP`  
