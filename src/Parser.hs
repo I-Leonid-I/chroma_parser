@@ -17,12 +17,12 @@ type Parser = Parsec Void String
 data Command = ADD | DELETE | UPDATE | GET | SEARCH | DROP
     deriving (Show, Eq)
 type Metadata = (String, String)
-data Result = AddResult String [Metadata]
-            | DeleteResult String
-            | UpdateResult String String [Metadata]
-            | GetResult String
-            | SearchResult String Int [Metadata]
-            | DropResult
+data Query = AddQuery String [Metadata]
+            | DeleteQuery String
+            | UpdateQuery String String [Metadata]
+            | GetQuery String
+            | SearchQuery String Int [Metadata]
+            | DropQuery
     deriving (Show, Eq)
 
 spaceConsumer :: Parser ()
@@ -44,17 +44,17 @@ lexemeLeaveOneSpace p = do
     return x
 
 
-parseAllQueries :: Parser [Result]
+parseAllQueries :: Parser [Query]
 parseAllQueries = many parseQuery <* eof
 
-runParseAllQueries :: String -> [Result]
+runParseAllQueries :: String -> [Query]
 runParseAllQueries input =
     case runParser parseAllQueries "" input of
         Left err -> handleError err
         Right results -> results
 
 -- Alternative function that returns error information instead of throwing
-runParseAllQueriesWithError :: String -> Either (String, String) [Result]
+runParseAllQueriesWithError :: String -> Either (String, String) [Query]
 runParseAllQueriesWithError input =
     case runParser parseAllQueries "" input of
         Left err -> Left (parseErrorParts err)
@@ -68,7 +68,7 @@ runParseAllQueriesAsJson input =
         Right results -> parseMultipleToJson results
 
 
-handleError :: ParseErrorBundle String Void -> [Result]
+handleError :: ParseErrorBundle String Void -> [Query]
 handleError err = error (errorBundlePretty err)
 
 -- Extract unexpected and expecting parts from error message
@@ -99,7 +99,7 @@ errorToJson err =
     in "{\"error\":\"" ++ escapeJson unexpected ++ " -> " ++ escapeJson expecting ++ "\"}"
 
 
-parseQuery :: Parser Result
+parseQuery :: Parser Query
 parseQuery = choice
     [ parseAdd
     , parseDelete
@@ -109,51 +109,51 @@ parseQuery = choice
     , parseDrop
     ]
 
-parseAdd :: Parser Result
+parseAdd :: Parser Query
 parseAdd = do
     _ <- string "ADD" <?> "'ADD' command"
     fileName <- spaceReq parseFileName
     metadata <- option [] (try parseMetadata)
     _ <- symbol ";" <?> "';' at the end of ADD command"
-    return (AddResult fileName metadata)
+    return (AddQuery fileName metadata)
 
-parseDelete :: Parser Result
+parseDelete :: Parser Query
 parseDelete = do
     _ <- symbol "DELETE" <?> "'DELETE' command"
     fileId <- parseFileId
     _ <- symbol ";" <?> "';' at the end of DELETE command"
-    return (DeleteResult fileId)
+    return (DeleteQuery fileId)
 
-parseUpdate :: Parser Result
+parseUpdate :: Parser Query
 parseUpdate = do
     _ <- symbol "UPDATE" <?> "'UPDATE' command"
     fileId <- parseFileId
     fileName <- spaceReq parseFileName
     metadata <- option [] (try parseMetadata)
     _ <- symbol ";" <?> "';' at the end of UPDATE command"
-    return (UpdateResult fileId fileName metadata)
+    return (UpdateQuery fileId fileName metadata)
 
-parseGet :: Parser Result
+parseGet :: Parser Query
 parseGet = do
     _ <- symbol "GET" <?> "'GET' command"
     fileId <- parseFileId
     _ <- symbol ";" <?> "';' at the end of GET command"
-    return (GetResult fileId)
+    return (GetQuery fileId)
 
-parseSearch :: Parser Result
+parseSearch :: Parser Query
 parseSearch = do
     _ <- symbol "SEARCH" <?> "'SEARCH' command"
     countFiles <- parseCount
     fileName <- spaceReq parseFileName
     metadata <- option [] (try parseMetadata)
     _ <- symbol ";" <?> "';' at the end of SEARCH command"
-    return (SearchResult fileName countFiles metadata)
+    return (SearchQuery fileName countFiles metadata)
 
-parseDrop :: Parser Result
+parseDrop :: Parser Query
 parseDrop = do
     _ <- symbol "DROP" <?> "'DROP' command"
     _ <- symbol ";" <?> "';' at the end of DROP command"
-    return DropResult
+    return DropQuery
 
 
 parseFileName :: Parser String
@@ -203,38 +203,38 @@ escapeJson = concatMap esc
     esc '\t' = "\\t"
     esc c    = [c]
 
-parseMultipleToJson :: [Result] -> String
+parseMultipleToJson :: [Query] -> String
 parseMultipleToJson results =
     "[" ++ concat (intersperse "," (map resultToJson results)) ++ "]"
 
 -- Сериализация результата парсинга в JSON-строку
-resultToJson :: Result -> String
-resultToJson (AddResult fileName metadata) =
+resultToJson :: Query -> String
+resultToJson (AddQuery fileName metadata) =
     "{" ++
     "\"type\":\"ADD\"," ++
     "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
     "\"metadata\": " ++ metadataListToJson metadata ++ "}"
-resultToJson (DeleteResult fileId) =
+resultToJson (DeleteQuery fileId) =
     "{" ++
     "\"type\":\"DELETE\"," ++
     "\"fileId\":\"" ++ escapeJson fileId ++ "\"}"
-resultToJson (UpdateResult fileId fileName metadata) =
+resultToJson (UpdateQuery fileId fileName metadata) =
     "{" ++
     "\"type\":\"UPDATE\"," ++
     "\"fileId\":\"" ++ escapeJson fileId ++ "\"," ++
     "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
     "\"metadata\": " ++ metadataListToJson metadata ++ "}"
-resultToJson (GetResult fileId) =
+resultToJson (GetQuery fileId) =
     "{" ++
     "\"type\":\"GET\"," ++
     "\"fileId\":\"" ++ escapeJson fileId ++ "\"}"
-resultToJson (SearchResult fileName count metadata) =
+resultToJson (SearchQuery fileName count metadata) =
     "{" ++
     "\"type\":\"SEARCH\"," ++
     "\"fileName\":\"" ++ escapeJson fileName ++ "\"," ++
     "\"count\": " ++ show count ++ "," ++
     "\"metadata\": " ++ metadataListToJson metadata ++ "}"
-resultToJson DropResult =
+resultToJson DropQuery =
     "{" ++
     "\"type\":\"DROP\"" ++ "}"
     
