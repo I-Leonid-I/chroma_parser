@@ -212,7 +212,7 @@ parseFileId = do
     _ <- symbol "->" <?> "'->' before file ID"
     prefix <- some alphaNumChar
     when (prefix /= "doc") $
-      fail ("unexpected " ++ prefix ++ "\nexpecting 'doc' before file ID")
+      fail ("unexpected '" ++ prefix ++ "'" ++ "\nexpecting 'doc' before file ID")
     _ <- char '_' <?> "'_' after prefix 'doc' in file ID"
     fileId <- some digitChar
     return (prefix ++ "_" ++ fileId)
