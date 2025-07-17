@@ -9,7 +9,7 @@ testInputs :: [String]
 testInputs =
   [ "ADD file1 metadata: key1=val1, key2=val2;"
   , "ADD file2"
-  , "DELETE ->doc_123;"
+  , "DELETE ->file_123;"
   , "UPDATE ->doc_123 file2 metadata: key=val;"
   , "GET ->doc_123;"
   , "SEARCH ->2 file2 metadata: k1=v1, k2=v2;"

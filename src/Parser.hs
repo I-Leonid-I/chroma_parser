@@ -16,31 +16,38 @@ type Parser = Parsec Void String
 
 data Command = ADD | DELETE | UPDATE | GET | SEARCH | DROP
     deriving (Show, Eq)
+-- Meatadata - simple key-value pair of strings
 type Metadata = (String, String)
-data Query = AddQuery String [Metadata]
-            | DeleteQuery String
-            | UpdateQuery String String [Metadata]
-            | GetQuery String
-            | SearchQuery String Int [Metadata]
+data Query = AddQuery String [Metadata] -- FileContent [Metadata]
+            | DeleteQuery String -- File ID
+            | UpdateQuery String String [Metadata] -- File ID, FileContent, [Metadata]
+            | GetQuery String -- File ID
+            | SearchQuery String Int [Metadata] -- FileContent, Count, [Metadata]
             | DropQuery
     deriving (Show, Eq)
+type UnexpectedPartOfError = String
+type ExpectingPartOfError = String
 
 
 -- Consumes whitespace in the parser.
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 empty empty
 
+
 -- Wraps a parser to consume trailing whitespace.
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceConsumer
+
 
 -- Parses a given symbol and consumes trailing whitespace.
 symbol :: String -> Parser String
 symbol = L.symbol spaceConsumer
 
+
 -- Parses required whitespace before another parser.
 spaceReq :: Parser a -> Parser a
 spaceReq p = space1 *> p
+
 
 -- Parses and leaves one space after the parser.
 lexemeLeaveOneSpace :: Parser a -> Parser a
@@ -54,6 +61,7 @@ lexemeLeaveOneSpace p = do
 parseAllQueries :: Parser [Query]
 parseAllQueries = many parseQuery <* eof
 
+
 -- Runs the parser on input and returns results or throws error.
 runParseAllQueries :: String -> [Query]
 runParseAllQueries input =
@@ -61,12 +69,16 @@ runParseAllQueries input =
         Left err -> handleError err
         Right results -> results
 
+
 -- Runs the parser and returns either error info or results.
-runParseAllQueriesWithError :: String -> Either (String, String) [Query]
+runParseAllQueriesWithError ::
+  String
+  -> Either (UnexpectedPartOfError, ExpectingPartOfError) [Query]
 runParseAllQueriesWithError input =
     case runParser parseAllQueries "" input of
         Left err -> Left (parseErrorParts err)
         Right results -> Right results
+
 
 -- Runs the parser and returns results or error as a JSON string.
 runParseAllQueriesAsJson :: String -> String
@@ -76,20 +88,22 @@ runParseAllQueriesAsJson input =
         Right results -> parseMultipleToJson results
 
 
-
 -- Throws a formatted parse error.
 handleError :: ParseErrorBundle String Void -> [Query]
 handleError err = error (errorBundlePretty err)
 
 
 -- Extracts unexpected and expecting parts from a parse error.
-parseErrorParts :: ParseErrorBundle String Void -> (String, String)
+parseErrorParts ::
+  ParseErrorBundle String Void
+  -> (UnexpectedPartOfError, ExpectingPartOfError)
 parseErrorParts err = 
     let errorMsg = errorBundlePretty err
         errorLines = lines errorMsg
         unexpectedPart = extractUnexpected errorLines
         expectingPart = extractExpecting errorLines
     in (unexpectedPart, expectingPart)
+
 
 -- Extracts the unexpected part from error lines.
 extractUnexpected :: [String] -> String
@@ -98,12 +112,14 @@ extractUnexpected errorLines =
         Just line -> line
         Nothing -> "unknown"
 
+
 -- Extracts the expecting part from error lines.
 extractExpecting :: [String] -> String
 extractExpecting errorLines = 
     case find ("expecting " `isPrefixOf`) errorLines of
         Just line -> line
         Nothing -> "unknown"
+
 
 -- Converts a parse error to a JSON string.
 errorToJson :: ParseErrorBundle String Void -> String
@@ -182,11 +198,11 @@ parseDrop = do
     return DropQuery
 
 
-
 -- Parses a file name.
 parseFileName :: Parser String
 parseFileName = lexeme $ do
-    fileName <- manyTill anySingle (try (lookAhead (void (space1 *> string "metadata:"))) <|> try (lookAhead (void (char ';'))))
+    fileName <- manyTill anySingle (try (lookAhead (void (space1 *> string "metadata:")))
+      <|> try (lookAhead (void (char ';')))) <?> "'metadata:' or ';' after file name"
     return (dropWhileEnd isSpace fileName)
 
 
@@ -194,8 +210,9 @@ parseFileName = lexeme $ do
 parseFileId :: Parser String
 parseFileId = do
     _ <- symbol "->" <?> "'->' before file ID"
-    prefix <- lexeme $ some alphaNumChar
-    when (prefix /= "doc") $ fail "File ID must start with 'doc'"
+    prefix <- some alphaNumChar
+    when (prefix /= "doc") $
+      fail ("unexpected " ++ prefix ++ "\nexpecting 'doc' before file ID")
     _ <- char '_' <?> "'_' after prefix 'doc' in file ID"
     fileId <- some digitChar
     return (prefix ++ "_" ++ fileId)
@@ -218,7 +235,8 @@ parseKeyValue :: Parser Metadata
 parseKeyValue = do
     key <- lexeme (some alphaNumChar <?> "metadata key")
     _ <- symbol "=" <?> "'=' after metadata key"
-    value <- lexeme (manyTill anySingle (try (lookAhead (void (char ','))) <|> try (lookAhead (void (char ';'))))) <?> "metadata value"
+    value <- lexeme (manyTill anySingle (try (lookAhead (void (char ',')))
+      <|> try (lookAhead (void (char ';'))))) <?> "metadata value"
     return (key, value)
 
 
@@ -228,7 +246,6 @@ parseCount = do
     _ <- symbol "->" <?> "'->' before number of files"
     countNum <- lexemeLeaveOneSpace $ some digitChar
     return (read countNum)
-
 
 
 -- Escapes special characters for JSON output.
