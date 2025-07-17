@@ -5,7 +5,6 @@ import Text.Megaparsec
 import Data.Void
 
 -- Example test cases for manual testing
-
 testInputs :: [String]
 testInputs =
   [ "ADD file1 metadata: key1=val1, key2=val2;"
@@ -16,7 +15,7 @@ testInputs =
   , "SEARCH ->2 file2 metadata: k1=v1, k2=v2;"
   , "DROP;"
   , "ADD file3 metadata: k=v;"
-  , "ADD file4metadata: k=v;"  -- should fail (missing space before metadata)
+  , "ADD file4metadata: k=v;"  -- should not produce metadata (missing space before metadata)
   , "ADD file5 metadata: k=v; DELETE ->doc_5; DROP;"
   ]
 
