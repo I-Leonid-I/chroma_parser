@@ -1,3 +1,8 @@
+### Team members individual contribution
+Leonid Gunko (l.gunko@innopolis.university): Custom errror messages.
+Anna Zyrianova (a.zyrianova@innopolis.university): Lexer, multiple query parsing, code refactoring.
+Valerii Tiniakov (v.tiniakov@innopolis.university): JSON formatter, API.
+
 ### About Chroma
 Chroma is a powerful vector-based database. It provides collections and official [instruments](https://docs.trychroma.com/docs/collections/manage-collections) to work with them directly in Python or Typescript. Now you can write simple instructions and do not care about embedding generation. Our tool will parse your code and automatically execute all necessary commands for you to make Chroma usage as simple as possible ☺️
 
